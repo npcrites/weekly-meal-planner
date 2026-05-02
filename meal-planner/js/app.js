@@ -269,7 +269,7 @@ function renderIngredientRows(ingredients) {
 function openRecipeModal(idx) {
   editingMealIdx = idx;
   const meal = state.mealPlan[idx];
-  document.getElementById('recipeTitle').textContent = meal.name;
+  document.getElementById('recipeTitle').value = meal.name;
   document.getElementById('recipeMeta').textContent = `${meal.day}${meal.type ? ' · ' + meal.type : ''}${meal.time ? ' · ' + meal.time : ''}`;
   if (!meal.ingredients) meal.ingredients = [];
   renderIngredientRows(meal.ingredients);
@@ -309,7 +309,8 @@ document.getElementById('addIngredientBtn').addEventListener('click', () => {
 
 document.getElementById('saveRecipeBtn').addEventListener('click', () => {
   const meal = state.mealPlan[editingMealIdx];
-  // Read current values from inputs
+  const newName = document.getElementById('recipeTitle').value.trim();
+  if (newName) meal.name = newName;
   const inputs = document.querySelectorAll('#recipeIngredients input');
   meal.ingredients = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
   save();
