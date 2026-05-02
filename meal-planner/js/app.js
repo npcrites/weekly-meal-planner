@@ -645,7 +645,7 @@ document.getElementById('addPlanBtn').addEventListener('click', () => {
 
 document.getElementById('chooseAi').addEventListener('click', () => {
   closeModal('addMealChooserModal');
-  document.getElementById('generatePlanBtn').click();
+  openGenerateModal();
 });
 
 document.getElementById('chooseManual').addEventListener('click', () => {
@@ -745,12 +745,12 @@ function initDayPicker() {
   });
 }
 
-document.getElementById('generatePlanBtn').addEventListener('click', () => {
+function openGenerateModal() {
   document.getElementById('promptSection').style.display = 'none';
   document.getElementById('planPasteArea').value = '';
   initDayPicker();
   openModal('generateModal');
-});
+}
 
 document.getElementById('buildPromptBtn').addEventListener('click', () => {
   state.settings.mealDays = JSON.parse(JSON.stringify(daySelections));
