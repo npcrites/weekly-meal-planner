@@ -551,7 +551,13 @@ document.getElementById('confirmPastePlan').addEventListener('click', () => {
   const raw = document.getElementById('planPasteArea').value.trim();
   if (!raw) return;
   try {
-    const clean = raw.replace(/```json|```/g, '').trim();
+    let clean = raw.replace(/```json|```/g, '').trim();
+    // Extract the first JSON array from anywhere in the text
+    const start = clean.indexOf('[');
+    const end = clean.lastIndexOf(']');
+    if (start !== -1 && end !== -1 && end > start) {
+      clean = clean.slice(start, end + 1);
+    }
     const plan = JSON.parse(clean);
     if (Array.isArray(plan)) {
       state.mealPlan = plan;
