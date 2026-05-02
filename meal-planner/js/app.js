@@ -626,6 +626,87 @@ document.getElementById('clearPlanBtn').addEventListener('click', () => {
   }
 });
 
+// ─── ADD MEAL CHOOSER ─────────────────────────────────────────────────────────
+document.getElementById('addPlanBtn').addEventListener('click', () => {
+  openModal('addMealChooserModal');
+});
+
+document.getElementById('chooseAi').addEventListener('click', () => {
+  closeModal('addMealChooserModal');
+  document.getElementById('generatePlanBtn').click();
+});
+
+document.getElementById('chooseManual').addEventListener('click', () => {
+  closeModal('addMealChooserModal');
+  openManualMealModal();
+});
+
+initToggle('manualTypeToggle');
+
+let manualIngredients = [];
+
+function renderManualIngredients() {
+  const list = document.getElementById('manualIngredients');
+  list.innerHTML = manualIngredients.map((ing, i) => `
+    <div class="ingredient-row">
+      <div class="ingredient-input-wrap">
+        <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-manual-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ingredient" />
+      </div>
+      <button class="delete-btn" data-remove-manual="${i}">×</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', e => {
+      manualIngredients[e.target.dataset.manualIdx] = e.target.value;
+    });
+  });
+  list.querySelectorAll('[data-remove-manual]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      manualIngredients.splice(btn.dataset.removeManual, 1);
+      renderManualIngredients();
+    });
+  });
+}
+
+function openManualMealModal() {
+  manualIngredients = [''];
+  document.getElementById('manualName').value = '';
+  document.getElementById('manualTime').value = '';
+  document.getElementById('manualInstructions').value = '';
+  setToggleVal('manualTypeToggle', 'dinner');
+  renderManualIngredients();
+  openModal('manualMealModal');
+}
+
+document.getElementById('manualAddIngredient').addEventListener('click', () => {
+  manualIngredients.push('');
+  renderManualIngredients();
+  const inputs = document.querySelectorAll('#manualIngredients input');
+  inputs[inputs.length - 1].focus();
+});
+
+document.getElementById('confirmManualMeal').addEventListener('click', () => {
+  const name = document.getElementById('manualName').value.trim();
+  if (!name) { alert('Please enter a meal name'); return; }
+  const day = document.getElementById('manualDay').value;
+  const type = getToggleVal('manualTypeToggle') || 'dinner';
+  const time = document.getElementById('manualTime').value.trim();
+  const ingredients = manualIngredients.map(i => i.trim()).filter(Boolean);
+  const instructionsText = document.getElementById('manualInstructions').value.trim();
+  const instructions = instructionsText ? instructionsText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+  state.mealPlan.push({ day, type, name, time, ingredients, instructions, appliances: [] });
+  // Auto-add new ingredients to shopping list if not already in pantry
+  const pantryNames = state.pantry.map(p => p.name.toLowerCase());
+  ingredients.forEach(ing => {
+    if (!pantryNames.includes(ing.toLowerCase())) {
+      const exists = state.shopList.find(s => s.name.toLowerCase() === ing.toLowerCase());
+      if (!exists) state.shopList.push({ id: uid(), name: ing, store: "Trader Joe's", qty: '', checked: false });
+    }
+  });
+  save(); renderPlan(); renderShop(); closeModal('manualMealModal');
+});
+
 // ─── GENERATE MEAL PLAN ───────────────────────────────────────────────────────
 const WEEK_DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 let daySelections = {};
