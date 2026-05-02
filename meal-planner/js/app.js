@@ -510,6 +510,24 @@ document.getElementById('resetWeekBtn').addEventListener('click', () => {
   }
 });
 
+// ─── THEME TOGGLE ────────────────────────────────────────────────────────────
+const SUN_SVG = `<circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/>`;
+const MOON_SVG = `<path d="M17 12.5a7 7 0 1 1-9.5-9.5A5.5 5.5 0 0 0 17 12.5z"/>`;
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = theme === 'light' ? MOON_SVG : SUN_SVG;
+}
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+});
+
+applyTheme(localStorage.getItem('theme') === 'light' ? 'light' : 'dark');
+
 // ─── WEEK LABEL ───────────────────────────────────────────────────────────────
 document.getElementById('weekLabel').textContent = getWeekLabel();
 
