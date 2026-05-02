@@ -449,7 +449,9 @@ document.getElementById('buildPromptBtn').addEventListener('click', () => {
     lunches > 0 ? `${lunches} lunches` : '',
   ].filter(Boolean).join(' and ');
 
-  const prompt = `Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco).
+  const prompt = `IMPORTANT: Return ONLY a raw JSON array. No markdown, no code blocks, no explanation, no React app. Just the JSON array starting with [ and ending with ].
+
+Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco).
 Plan: ${mealTypes || 'no meals specified'}.
 Grocery budget remaining this week: ~$${state.settings.groceryBudget} for Trader Joe\'s or Good Life Grocers in Bernal Heights SF.
 Current pantry: ${pantryNames || 'mostly empty'}.
