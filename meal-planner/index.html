@@ -251,7 +251,7 @@
           <div class="prompt-box" id="generatedPrompt"></div>
           <button class="copy-btn" id="copyPromptBtn">copy prompt</button>
           <label style="margin-top:1.5rem">paste claude's response</label>
-          <textarea id="planPasteArea" placeholder="Paste the meal plan JSON from Claude…" rows="7"></textarea>
+          <textarea id="planPasteArea" placeholder="Paste the meal plan JSON from Claude…" rows="7" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -317,7 +317,7 @@
         <p class="modal-info">Upload your receipt photo to Claude with this prompt, then paste the JSON back.</p>
         <div class="prompt-box">Parse this grocery receipt. Return only JSON in this exact format: {"store":"...","total":0.00,"items":[{"name":"...","category":"produce|protein|dairy|grains|pantry|frozen|other","qty":"..."}]}</div>
         <label style="margin-top:1rem">paste claude's json</label>
-        <textarea id="receiptPasteArea" placeholder='{"store":"Trader Joes","total":67.50,"items":[...]}' rows="6"></textarea>
+        <textarea id="receiptPasteArea" placeholder='{"store":"Trader Joes","total":67.50,"items":[...]}' rows="6" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" data-close="receiptModal">cancel</button>
