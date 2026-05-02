@@ -260,6 +260,55 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="recipeModal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="recipeTitle"></h3><button class="modal-close" data-close="recipeModal">✕</button></div>
+      <div class="modal-body">
+        <div class="recipe-meta" id="recipeMeta"></div>
+        <div id="recipeAppliancesWrap" style="margin-top:6px" id="recipeAppliances"></div>
+        <label style="margin-top:1rem">ingredients</label>
+        <ul class="recipe-list" id="recipeIngredients"></ul>
+        <label style="margin-top:1rem">instructions</label>
+        <ol class="recipe-list recipe-steps" id="recipeInstructions"></ol>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-confirm" data-close="recipeModal">done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="editPantryModal">
+    <div class="modal">
+      <div class="modal-header"><h3>edit item</h3><button class="modal-close" data-close="editPantryModal">✕</button></div>
+      <div class="modal-body">
+        <label>ingredient</label>
+        <input type="text" id="editItemName" />
+        <label>category</label>
+        <select id="editItemCategory">
+          <option value="produce">produce</option>
+          <option value="protein">protein</option>
+          <option value="dairy">dairy</option>
+          <option value="grains">grains</option>
+          <option value="pantry">pantry staples</option>
+          <option value="frozen">frozen</option>
+          <option value="other">other</option>
+        </select>
+        <label>quantity</label>
+        <input type="text" id="editItemQty" />
+        <label>low stock?</label>
+        <div class="toggle-group" id="editLowStockToggle">
+          <button class="toggle-btn active" data-val="false">no</button>
+          <button class="toggle-btn" data-val="true">yes</button>
+        </div>
+        <input type="hidden" id="editItemId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" data-close="editPantryModal">cancel</button>
+        <button class="btn-confirm" id="confirmEditItem">save</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay hidden" id="receiptModal">
     <div class="modal">
       <div class="modal-header"><h3>scan receipt</h3><button class="modal-close" data-close="receiptModal">✕</button></div>

@@ -153,16 +153,31 @@ function renderPlan() {
     grid.innerHTML = `<div class="empty-state"><p>no plan yet</p><p>tap generate to create this week's meals</p></div>`;
     return;
   }
-  grid.innerHTML = state.mealPlan.map(meal => `
-    <div class="meal-card">
+  grid.innerHTML = state.mealPlan.map((meal, i) => `
+    <div class="meal-card" data-meal-idx="${i}" style="cursor:pointer">
       <div class="meal-card-day">${meal.day}${meal.type ? ' · ' + meal.type : ''}</div>
       <div class="meal-card-name">${meal.name}</div>
       <div class="meal-card-meta">
         ${meal.time ? `<span class="meal-tag">${meal.time}</span>` : ''}
-        ${meal.ingredients ? meal.ingredients.slice(0, 3).map(i => `<span class="meal-tag">${i}</span>`).join('') : ''}
+        ${meal.appliances ? meal.appliances.map(a => `<span class="meal-tag">${a}</span>`).join('') : ''}
       </div>
     </div>
   `).join('');
+
+  grid.querySelectorAll('.meal-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const meal = state.mealPlan[card.dataset.mealIdx];
+      document.getElementById('recipeTitle').textContent = meal.name;
+      document.getElementById('recipeMeta').textContent = `${meal.day}${meal.type ? ' · ' + meal.type : ''}${meal.time ? ' · ' + meal.time : ''}`;
+      document.getElementById('recipeIngredients').innerHTML = meal.ingredients
+        ? meal.ingredients.map(i => `<li>${i}</li>`).join('') : '<li>no ingredients listed</li>';
+      document.getElementById('recipeInstructions').innerHTML = meal.instructions
+        ? meal.instructions.map(s => `<li>${s}</li>`).join('') : '<li>no instructions — regenerate your meal plan to get them</li>';
+      document.getElementById('recipeAppliances').innerHTML = meal.appliances
+        ? meal.appliances.map(a => `<span class="meal-tag">${a}</span>`).join('') : '';
+      openModal('recipeModal');
+    });
+  });
 }
 
 function renderPantry(filter = '') {
@@ -183,7 +198,7 @@ function renderPantry(filter = '') {
           <div class="pantry-item-left">
             ${item.staple ? '<div class="staple-dot"></div>' : ''}
             <div>
-              <div class="pantry-item-name">${item.name}</div>
+              <div class="pantry-item-name" data-edit="${item.id}">${item.name}</div>
               ${item.qty ? `<div class="pantry-item-qty">${item.qty}</div>` : ''}
             </div>
           </div>
@@ -204,7 +219,31 @@ function renderPantry(filter = '') {
       save(); renderPantry(document.getElementById('pantrySearch').value);
     });
   });
+
+  list.querySelectorAll('[data-edit]').forEach(el => {
+    el.addEventListener('click', () => {
+      const item = state.pantry.find(i => i.id === el.dataset.edit);
+      if (!item) return;
+      document.getElementById('editItemId').value = item.id;
+      document.getElementById('editItemName').value = item.name;
+      document.getElementById('editItemCategory').value = item.category;
+      document.getElementById('editItemQty').value = item.qty || '';
+      setToggleVal('editLowStockToggle', item.low ? 'true' : 'false');
+      openModal('editPantryModal');
+    });
+  });
 }
+
+document.getElementById('confirmEditItem').addEventListener('click', () => {
+  const id = document.getElementById('editItemId').value;
+  const item = state.pantry.find(i => i.id === id);
+  if (!item) return;
+  item.name = document.getElementById('editItemName').value.trim() || item.name;
+  item.category = document.getElementById('editItemCategory').value;
+  item.qty = document.getElementById('editItemQty').value.trim();
+  item.low = getToggleVal('editLowStockToggle') === 'true';
+  save(); renderPantry(document.getElementById('pantrySearch').value); closeModal('editPantryModal');
+});
 
 function renderLog() {
   const log = document.getElementById('spendingLog');
@@ -324,7 +363,7 @@ function setToggleVal(groupId, val) {
   });
 }
 
-['whoToggle', 'catToggle', 'lowStockToggle', 'lunchToggle'].forEach(initToggle);
+['whoToggle', 'catToggle', 'lowStockToggle', 'lunchToggle', 'editLowStockToggle'].forEach(initToggle);
 
 // ─── ADD PANTRY ITEM ─────────────────────────────────────────────────────────
 document.getElementById('addItemBtn').addEventListener('click', () => {
@@ -455,10 +494,12 @@ Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco).
 Plan: ${mealTypes || 'no meals specified'}.
 Grocery budget remaining this week: ~$${state.settings.groceryBudget} for Trader Joe\'s or Good Life Grocers in Bernal Heights SF.
 Current pantry: ${pantryNames || 'mostly empty'}.
+Available appliances: air fryer, stove, oven, rice cooker, food processor.
 Prefer meals that use pantry items. Mix of cuisines, no dietary restrictions.
+Quality matters — use fresh, whole ingredients. No frozen pizza, processed shortcuts, or low-effort meals.
 
 Return ONLY a JSON array, no other text:
-[{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"]}]`;
+[{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"],"instructions":["Step 1: ...","Step 2: ...","Step 3: ..."],"appliances":["stove"]}]`;
 
   document.getElementById('generatedPrompt').textContent = prompt;
   document.getElementById('promptSection').style.display = 'block';

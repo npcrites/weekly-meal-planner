@@ -196,7 +196,7 @@ body {
 }
 .pantry-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 0; border-bottom: 0.5px solid var(--border);
+  padding: 14px 0; border-bottom: 0.5px solid var(--border);
 }
 .pantry-item:last-child { border-bottom: none; }
 .pantry-item-left { display: flex; align-items: center; gap: 10px; }
@@ -373,6 +373,14 @@ body {
   color: var(--red); font-family: 'DM Sans', sans-serif;
   font-size: 14px; cursor: pointer; margin-top: 6px;
 }
+/* RECIPE MODAL */
+.recipe-meta { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+.recipe-list { padding-left: 18px; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.recipe-list li { font-size: 14px; color: var(--text); line-height: 1.5; }
+.recipe-steps li { color: var(--text2); }
+.pantry-item-name { cursor: pointer; }
+.pantry-item-name:hover { color: var(--accent); }
+
 .week-summary {
   background: var(--bg2); border: 0.5px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
