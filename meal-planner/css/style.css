@@ -399,6 +399,18 @@ body {
 .ingredient-row { display: flex; align-items: center; gap: 6px; }
 .ingredient-row input { flex: 1; padding: 8px 10px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
 .ingredient-row input:focus { border-color: var(--accent); }
+.ingredient-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
+.ingredient-badge.pantry { color: var(--green); background: var(--green-bg); }
+.ingredient-badge.bought { color: var(--accent); background: var(--accent-bg); }
+
+/* SAVED MEALS */
+.saved-meal {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px;
+}
+.saved-meal-name { font-size: 14px; color: var(--text); }
+.saved-meal-actions { display: flex; gap: 8px; align-items: center; }
 .pantry-item-name { cursor: pointer; }
 .pantry-item-name:hover { color: var(--accent); }
 

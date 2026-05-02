@@ -34,6 +34,7 @@ let state = {
   spending: [],
   mealPlan: [],
   shopList: [],
+  favorites: [],
 };
 
 // ─── PERSISTENCE ─────────────────────────────────────────────────────────────
@@ -117,6 +118,52 @@ function renderAll() {
   renderPantry();
   renderLog();
   renderShop();
+  renderSavedMeals();
+}
+
+function renderSavedMeals() {
+  const section = document.getElementById('savedMealsSection');
+  const list = document.getElementById('savedMealsList');
+  if (!state.favorites || !state.favorites.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  list.innerHTML = state.favorites.map((meal, i) => `
+    <div class="saved-meal" data-fav-idx="${i}">
+      <div class="saved-meal-name">${meal.name}</div>
+      <div class="saved-meal-actions">
+        <button class="pill-btn ghost" data-add-fav="${i}">+ this week</button>
+        <button class="delete-btn" data-remove-fav="${i}">×</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-add-fav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fav = state.favorites[btn.dataset.addFav];
+      state.mealPlan.push({ ...fav, ingredients: [...(fav.ingredients || [])], instructions: [...(fav.instructions || [])] });
+      save(); renderPlan();
+    });
+  });
+  list.querySelectorAll('[data-remove-fav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.favorites.splice(btn.dataset.removeFav, 1);
+      save(); renderSavedMeals();
+    });
+  });
+}
+
+function isFavorited(meal) {
+  return (state.favorites || []).some(f => f.name === meal.name);
+}
+
+function toggleFavorite(meal) {
+  if (!state.favorites) state.favorites = [];
+  const i = state.favorites.findIndex(f => f.name === meal.name);
+  if (i >= 0) state.favorites.splice(i, 1);
+  else state.favorites.push({ ...meal, ingredients: [...(meal.ingredients || [])], instructions: [...(meal.instructions || [])] });
+  save();
 }
 
 function renderBudget() {
@@ -182,14 +229,31 @@ function renderPlan() {
 
 let editingMealIdx = null;
 
+function ingredientStatus(ing) {
+  const lower = ing.toLowerCase();
+  const inPantry = state.pantry.some(p => {
+    const pName = p.name.toLowerCase();
+    return lower.includes(pName) || pName.includes(lower);
+  });
+  if (inPantry) return 'pantry';
+  const checkedOff = state.shopList.some(s => s.checked && (lower.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(lower)));
+  if (checkedOff) return 'bought';
+  return null;
+}
+
 function renderIngredientRows(ingredients) {
   const list = document.getElementById('recipeIngredients');
-  list.innerHTML = ingredients.map((ing, i) => `
-    <div class="ingredient-row">
-      <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-ing-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" />
-      <button class="delete-btn" data-remove-ing="${i}">×</button>
-    </div>
-  `).join('');
+  list.innerHTML = ingredients.map((ing, i) => {
+    const status = ingredientStatus(ing);
+    const badge = status ? `<span class="ingredient-badge ${status}">${status === 'pantry' ? 'have' : 'bought'}</span>` : '';
+    return `
+      <div class="ingredient-row">
+        <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-ing-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        ${badge}
+        <button class="delete-btn" data-remove-ing="${i}">×</button>
+      </div>
+    `;
+  }).join('');
   list.querySelectorAll('[data-remove-ing]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.removeIng);
@@ -212,8 +276,24 @@ function openRecipeModal(idx) {
     : '<li>no instructions — regenerate your meal plan to get them</li>';
   document.getElementById('recipeAppliances').innerHTML = meal.appliances
     ? meal.appliances.map(a => `<span class="meal-tag">${a}</span>`).join('') : '';
+  updateFavoriteStar(meal);
   openModal('recipeModal');
 }
+
+function updateFavoriteStar(meal) {
+  const star = document.getElementById('favoriteStar');
+  const fav = isFavorited(meal);
+  star.textContent = fav ? '★' : '☆';
+  star.style.color = fav ? 'var(--accent)' : '';
+}
+
+document.getElementById('favoriteStar').addEventListener('click', () => {
+  if (editingMealIdx === null) return;
+  const meal = state.mealPlan[editingMealIdx];
+  toggleFavorite(meal);
+  updateFavoriteStar(meal);
+  renderSavedMeals();
+});
 
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   const meal = state.mealPlan[editingMealIdx];
@@ -334,44 +414,47 @@ function renderLog() {
 }
 
 function renderShop() {
-  const list = document.getElementById('shopList');
-  if (!state.shopList.length) {
-    list.innerHTML = `<div class="empty-state"><p>list is empty</p><p>add items or generate a meal plan</p></div>`;
-    return;
-  }
-  const grouped = {};
-  state.shopList.forEach(item => {
-    const store = item.store || 'any';
-    if (!grouped[store]) grouped[store] = [];
-    grouped[store].push(item);
-  });
-  const storeOrder = ["Trader Joe's", "Good Life Grocers", "any"];
-  const stores = [...new Set([...storeOrder, ...Object.keys(grouped)])].filter(s => grouped[s]);
-
-  list.innerHTML = stores.map(store => `
-    <div class="shop-store-group">
-      <div class="shop-store-label">${store}</div>
-      ${grouped[store].map(item => `
-        <div class="shop-item" data-shop-id="${item.id}">
-          <button class="shop-check ${item.checked ? 'checked' : ''}" data-check="${item.id}"></button>
-          <span class="shop-item-name ${item.checked ? 'checked' : ''}">${item.name}</span>
-          ${item.qty ? `<span class="shop-item-qty">${item.qty}</span>` : ''}
-          <button class="delete-btn" data-delete-shop="${item.id}">×</button>
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
-
-  list.querySelectorAll('[data-check]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = state.shopList.find(i => i.id === btn.dataset.check);
-      if (item) { item.checked = !item.checked; save(); renderShop(); }
+  ['shopList', 'planGroceriesView'].forEach(id => {
+    const list = document.getElementById(id);
+    if (!list) return;
+    if (!state.shopList.length) {
+      list.innerHTML = `<div class="empty-state"><p>list is empty</p><p>add items or generate a meal plan</p></div>`;
+      return;
+    }
+    const grouped = {};
+    state.shopList.forEach(item => {
+      const store = item.store || 'any';
+      if (!grouped[store]) grouped[store] = [];
+      grouped[store].push(item);
     });
-  });
-  list.querySelectorAll('[data-delete-shop]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.shopList = state.shopList.filter(i => i.id !== btn.dataset.deleteShop);
-      save(); renderShop();
+    const storeOrder = ["Trader Joe's", "Good Life Grocers", "any"];
+    const stores = [...new Set([...storeOrder, ...Object.keys(grouped)])].filter(s => grouped[s]);
+
+    list.innerHTML = stores.map(store => `
+      <div class="shop-store-group">
+        <div class="shop-store-label">${store}</div>
+        ${grouped[store].map(item => `
+          <div class="shop-item" data-shop-id="${item.id}">
+            <button class="shop-check ${item.checked ? 'checked' : ''}" data-check="${item.id}"></button>
+            <span class="shop-item-name ${item.checked ? 'checked' : ''}">${item.name}</span>
+            ${item.qty ? `<span class="shop-item-qty">${item.qty}</span>` : ''}
+            <button class="delete-btn" data-delete-shop="${item.id}">×</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-check]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = state.shopList.find(i => i.id === btn.dataset.check);
+        if (item) { item.checked = !item.checked; save(); renderShop(); }
+      });
+    });
+    list.querySelectorAll('[data-delete-shop]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.shopList = state.shopList.filter(i => i.id !== btn.dataset.deleteShop);
+        save(); renderShop();
+      });
     });
   });
 }
@@ -521,6 +604,18 @@ document.getElementById('confirmReceipt').addEventListener('click', () => {
   } catch(e) { alert('Could not parse JSON. Make sure you copied exactly what Claude returned.'); }
 });
 
+// Plan tab toggle: meals vs groceries
+document.querySelectorAll('#planViewToggle .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#planViewToggle .toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const showGroceries = btn.dataset.view === 'groceries';
+    document.getElementById('mealPlanGrid').style.display = showGroceries ? 'none' : '';
+    document.getElementById('planGroceriesView').style.display = showGroceries ? '' : 'none';
+    document.getElementById('savedMealsSection').style.display = showGroceries ? 'none' : (state.favorites && state.favorites.length ? '' : 'none');
+  });
+});
+
 document.getElementById('clearPlanBtn').addEventListener('click', () => {
   if (confirm('Clear this week\'s meal plan?')) {
     state.mealPlan = [];
@@ -569,6 +664,7 @@ document.getElementById('buildPromptBtn').addEventListener('click', () => {
   save();
 
   const pantryNames = state.pantry.map(i => i.name).join(', ');
+  const favNames = (state.favorites || []).map(f => f.name).filter(Boolean);
   const dinnerDays = WEEK_DAYS.filter(d => daySelections[d].dinner);
   const lunchDays = WEEK_DAYS.filter(d => daySelections[d].lunch);
   const mealLines = [
@@ -586,6 +682,7 @@ Available appliances: air fryer, stove, oven, rice cooker, food processor.
 Prefer meals that use pantry items. Mix of cuisines, no dietary restrictions.
 Quality matters — use fresh, whole ingredients. No frozen pizza, processed shortcuts, or low-effort meals.
 Schedule perishables (fish, seafood, fresh herbs) early in the week (Saturday/Sunday/Monday).
+${favNames.length ? `Favorite meals to mix into rotation occasionally (include 1-2 if they fit): ${favNames.map(n => `"${n}"`).join(', ')}.` : ''}
 Only include entries for the meals listed above. Do NOT add placeholder entries like "N/A" or "lunch not requested" for days that weren't asked for — just omit them from the array.
 
 Each meal MUST have its own detailed, specific instructions tailored to that exact recipe — not generic steps. Include 5-8 numbered steps with exact temperatures, times, quantities, and techniques. Every step should be actionable and unique to the meal. No placeholder text.

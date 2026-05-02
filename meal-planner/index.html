@@ -81,7 +81,16 @@
             <button class="pill-btn" id="generatePlanBtn">generate ↗</button>
           </div>
         </div>
+        <div class="toggle-group" id="planViewToggle" style="margin-bottom:16px">
+          <button class="toggle-btn active" data-view="meals">meals</button>
+          <button class="toggle-btn" data-view="groceries">groceries</button>
+        </div>
         <div id="mealPlanGrid"></div>
+        <div id="planGroceriesView" style="display:none"></div>
+        <div id="savedMealsSection" style="display:none;margin-top:24px">
+          <div class="section-header"><h2>saved meals</h2></div>
+          <div id="savedMealsList"></div>
+        </div>
       </section>
 
       <section class="tab-pane" id="tab-pantry">
@@ -263,7 +272,13 @@
 
   <div class="modal-overlay hidden" id="recipeModal">
     <div class="modal">
-      <div class="modal-header"><h3 id="recipeTitle"></h3><button class="modal-close" data-close="recipeModal">✕</button></div>
+      <div class="modal-header">
+        <h3 id="recipeTitle"></h3>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="modal-close" id="favoriteStar" aria-label="Save to favorites" style="font-size:18px">☆</button>
+          <button class="modal-close" data-close="recipeModal">✕</button>
+        </div>
+      </div>
       <div class="modal-body">
         <div class="recipe-meta" id="recipeMeta"></div>
         <div id="recipeAppliances" style="margin-top:6px"></div>
