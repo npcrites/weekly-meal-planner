@@ -429,11 +429,29 @@ document.getElementById('confirmReceipt').addEventListener('click', () => {
 
 // ─── GENERATE MEAL PLAN ───────────────────────────────────────────────────────
 document.getElementById('generatePlanBtn').addEventListener('click', () => {
-  const { dinnersPerWeek, includeLunches, groceryBudget } = state.settings;
+  document.getElementById('genDinners').value = state.settings.dinnersPerWeek;
+  document.getElementById('genLunches').value = state.settings.lunchesPerWeek || 0;
+  document.getElementById('promptSection').style.display = 'none';
+  document.getElementById('planPasteArea').value = '';
+  openModal('generateModal');
+});
+
+document.getElementById('buildPromptBtn').addEventListener('click', () => {
+  const dinners = parseInt(document.getElementById('genDinners').value) || 0;
+  const lunches = parseInt(document.getElementById('genLunches').value) || 0;
+  state.settings.dinnersPerWeek = dinners;
+  state.settings.lunchesPerWeek = lunches;
+  save();
+
   const pantryNames = state.pantry.map(i => i.name).join(', ');
-  const prompt = `Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco). 
-Dinners per week: ${dinnersPerWeek}${includeLunches ? '. Also include lunches.' : '. Dinners only.'}
-Grocery budget remaining this week: ~$${groceryBudget} for Trader Joe\'s or Good Life Grocers in Bernal Heights SF.
+  const mealTypes = [
+    dinners > 0 ? `${dinners} dinners` : '',
+    lunches > 0 ? `${lunches} lunches` : '',
+  ].filter(Boolean).join(' and ');
+
+  const prompt = `Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco).
+Plan: ${mealTypes || 'no meals specified'}.
+Grocery budget remaining this week: ~$${state.settings.groceryBudget} for Trader Joe\'s or Good Life Grocers in Bernal Heights SF.
 Current pantry: ${pantryNames || 'mostly empty'}.
 Prefer meals that use pantry items. Mix of cuisines, no dietary restrictions.
 
@@ -441,8 +459,7 @@ Return ONLY a JSON array, no other text:
 [{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"]}]`;
 
   document.getElementById('generatedPrompt').textContent = prompt;
-  document.getElementById('planPasteArea').value = '';
-  openModal('generateModal');
+  document.getElementById('promptSection').style.display = 'block';
 });
 
 document.getElementById('copyPromptBtn').addEventListener('click', () => {

@@ -240,11 +240,18 @@
     <div class="modal">
       <div class="modal-header"><h3>generate meal plan</h3><button class="modal-close" data-close="generateModal">✕</button></div>
       <div class="modal-body">
-        <p class="modal-info">Copy this prompt → paste into Claude → paste the response back here.</p>
-        <div class="prompt-box" id="generatedPrompt"></div>
-        <button class="copy-btn" id="copyPromptBtn">copy prompt</button>
-        <label style="margin-top:1.5rem">paste claude's response</label>
-        <textarea id="planPasteArea" placeholder="Paste the meal plan JSON from Claude…" rows="7"></textarea>
+        <label>dinners this week</label>
+        <input type="number" id="genDinners" min="0" max="7" />
+        <label>lunches this week</label>
+        <input type="number" id="genLunches" min="0" max="7" />
+        <button class="btn-confirm" id="buildPromptBtn" style="margin-top:8px">build prompt</button>
+        <div id="promptSection" style="display:none">
+          <p class="modal-info" style="margin-top:1rem">Copy this prompt → paste into Claude → paste the response back here.</p>
+          <div class="prompt-box" id="generatedPrompt"></div>
+          <button class="copy-btn" id="copyPromptBtn">copy prompt</button>
+          <label style="margin-top:1.5rem">paste claude's response</label>
+          <textarea id="planPasteArea" placeholder="Paste the meal plan JSON from Claude…" rows="7"></textarea>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" data-close="generateModal">cancel</button>
