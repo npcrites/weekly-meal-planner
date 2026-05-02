@@ -466,37 +466,71 @@ document.getElementById('confirmReceipt').addEventListener('click', () => {
   } catch(e) { alert('Could not parse JSON. Make sure you copied exactly what Claude returned.'); }
 });
 
+document.getElementById('clearPlanBtn').addEventListener('click', () => {
+  if (confirm('Clear this week\'s meal plan?')) {
+    state.mealPlan = [];
+    state.shopList = [];
+    save(); renderPlan(); renderShop();
+  }
+});
+
 // ─── GENERATE MEAL PLAN ───────────────────────────────────────────────────────
+const WEEK_DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
+let daySelections = {};
+
+function initDayPicker() {
+  WEEK_DAYS.forEach(d => {
+    const saved = (state.settings.mealDays || {})[d] || {};
+    daySelections[d] = { dinner: !!saved.dinner, lunch: !!saved.lunch };
+  });
+  const el = document.getElementById('dayPicker');
+  el.innerHTML = `
+    <div class="day-picker">
+      <div class="dp-corner"></div>
+      ${WEEK_DAYS.map(d => `<div class="dp-day">${d.slice(0,3)}</div>`).join('')}
+      <div class="dp-label">D</div>
+      ${WEEK_DAYS.map(d => `<button class="dp-btn ${daySelections[d].dinner ? 'active' : ''}" data-day="${d}" data-type="dinner"></button>`).join('')}
+      <div class="dp-label">L</div>
+      ${WEEK_DAYS.map(d => `<button class="dp-btn ${daySelections[d].lunch ? 'active' : ''}" data-day="${d}" data-type="lunch"></button>`).join('')}
+    </div>`;
+  el.querySelectorAll('.dp-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { day, type } = btn.dataset;
+      daySelections[day][type] = !daySelections[day][type];
+      btn.classList.toggle('active', daySelections[day][type]);
+    });
+  });
+}
+
 document.getElementById('generatePlanBtn').addEventListener('click', () => {
-  document.getElementById('genDinners').value = state.settings.dinnersPerWeek;
-  document.getElementById('genLunches').value = state.settings.lunchesPerWeek || 0;
   document.getElementById('promptSection').style.display = 'none';
   document.getElementById('planPasteArea').value = '';
+  initDayPicker();
   openModal('generateModal');
 });
 
 document.getElementById('buildPromptBtn').addEventListener('click', () => {
-  const dinners = parseInt(document.getElementById('genDinners').value) || 0;
-  const lunches = parseInt(document.getElementById('genLunches').value) || 0;
-  state.settings.dinnersPerWeek = dinners;
-  state.settings.lunchesPerWeek = lunches;
+  state.settings.mealDays = JSON.parse(JSON.stringify(daySelections));
   save();
 
   const pantryNames = state.pantry.map(i => i.name).join(', ');
-  const mealTypes = [
-    dinners > 0 ? `${dinners} dinners` : '',
-    lunches > 0 ? `${lunches} lunches` : '',
-  ].filter(Boolean).join(' and ');
+  const dinnerDays = WEEK_DAYS.filter(d => daySelections[d].dinner);
+  const lunchDays = WEEK_DAYS.filter(d => daySelections[d].lunch);
+  const mealLines = [
+    dinnerDays.length ? `Dinners needed: ${dinnerDays.join(', ')}` : '',
+    lunchDays.length ? `Lunches needed: ${lunchDays.join(', ')}` : '',
+  ].filter(Boolean).join('\n');
 
   const prompt = `IMPORTANT: Return ONLY a raw JSON array. No markdown, no code blocks, no explanation, no React app. Just the JSON array starting with [ and ending with ].
 
 Generate a weekly meal plan for Nick and Pascale (2 people in San Francisco).
-Plan: ${mealTypes || 'no meals specified'}.
+${mealLines || 'No meals specified.'}
 Grocery budget remaining this week: ~$${state.settings.groceryBudget} for Trader Joe\'s or Good Life Grocers in Bernal Heights SF.
 Current pantry: ${pantryNames || 'mostly empty'}.
 Available appliances: air fryer, stove, oven, rice cooker, food processor.
 Prefer meals that use pantry items. Mix of cuisines, no dietary restrictions.
 Quality matters — use fresh, whole ingredients. No frozen pizza, processed shortcuts, or low-effort meals.
+Schedule perishables (fish, seafood, fresh herbs) early in the week (Saturday/Sunday/Monday).
 
 Return ONLY a JSON array, no other text:
 [{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"],"instructions":["Step 1: ...","Step 2: ...","Step 3: ..."],"appliances":["stove"]}]`;
