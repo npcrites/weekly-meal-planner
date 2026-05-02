@@ -505,6 +505,7 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
   openModal('settingsModal');
 });
 document.getElementById('confirmSettings').addEventListener('click', () => {
+  const wasConnected = !!state.settings.supabaseUrl;
   state.settings.groceryBudget = parseFloat(document.getElementById('setGroceryBudget').value) || 125;
   state.settings.diningBudget = parseFloat(document.getElementById('setDiningBudget').value) || 87;
   state.settings.hardCap = parseFloat(document.getElementById('setHardCap').value) || 250;
@@ -512,8 +513,15 @@ document.getElementById('confirmSettings').addEventListener('click', () => {
   state.settings.includeLunches = getToggleVal('lunchToggle') === 'true';
   state.settings.supabaseUrl = document.getElementById('setSupabaseUrl').value.trim();
   state.settings.supabaseKey = document.getElementById('setSupabaseKey').value.trim();
-  save(); renderAll(); closeModal('settingsModal');
-  if (state.settings.supabaseUrl) loadFromSupabase();
+  renderAll(); closeModal('settingsModal');
+  if (state.settings.supabaseUrl && !wasConnected) {
+    // First time connecting — pull remote data first, then save locally
+    localStorage.setItem('pantry_app_v1', JSON.stringify(state));
+    loadFromSupabase();
+  } else {
+    save();
+    if (state.settings.supabaseUrl) loadFromSupabase();
+  }
 });
 
 document.getElementById('resetWeekBtn').addEventListener('click', () => {
