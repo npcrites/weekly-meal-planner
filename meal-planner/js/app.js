@@ -155,6 +155,7 @@ function renderPlan() {
   }
   grid.innerHTML = state.mealPlan.map((meal, i) => `
     <div class="meal-card" data-meal-idx="${i}" style="cursor:pointer">
+      <button class="meal-card-delete" data-delete-meal="${i}" aria-label="Remove meal">×</button>
       <div class="meal-card-day">${meal.day}${meal.type ? ' · ' + meal.type : ''}</div>
       <div class="meal-card-name">${meal.name}</div>
       <div class="meal-card-meta">
@@ -163,6 +164,16 @@ function renderPlan() {
       </div>
     </div>
   `).join('');
+
+  grid.querySelectorAll('[data-delete-meal]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.deleteMeal);
+      state.mealPlan.splice(idx, 1);
+      save();
+      renderPlan();
+    });
+  });
 
   grid.querySelectorAll('.meal-card').forEach(card => {
     card.addEventListener('click', () => openRecipeModal(parseInt(card.dataset.mealIdx)));
@@ -577,8 +588,10 @@ Quality matters — use fresh, whole ingredients. No frozen pizza, processed sho
 Schedule perishables (fish, seafood, fresh herbs) early in the week (Saturday/Sunday/Monday).
 Only include entries for the meals listed above. Do NOT add placeholder entries like "N/A" or "lunch not requested" for days that weren't asked for — just omit them from the array.
 
+Each meal MUST have its own detailed, specific instructions tailored to that exact recipe — not generic steps. Include 5-8 numbered steps with exact temperatures, times, quantities, and techniques. Every step should be actionable and unique to the meal. No placeholder text.
+
 Return ONLY a JSON array, no other text:
-[{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"],"instructions":["Step 1: ...","Step 2: ...","Step 3: ..."],"appliances":["stove"]}]`;
+[{"day":"Monday","type":"dinner","name":"Pan-seared chicken with lemon and herbs","time":"30 min","ingredients":["2 chicken breasts","1 lemon","2 cloves garlic","fresh thyme","olive oil","salt and pepper"],"instructions":["Pat chicken dry and season generously with salt and pepper on both sides.","Heat 2 tbsp olive oil in a skillet over medium-high heat until shimmering.","Sear chicken 5-6 minutes per side until golden brown and internal temp reaches 165°F.","Remove chicken, lower heat, add minced garlic and thyme to pan, sauté 30 seconds.","Squeeze juice of half a lemon into pan, scrape up brown bits, simmer 1 minute.","Spoon pan sauce over chicken and serve immediately."],"appliances":["stove"]}]`;
 
   document.getElementById('generatedPrompt').textContent = prompt;
   document.getElementById('promptSection').style.display = 'block';
