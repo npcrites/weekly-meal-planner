@@ -558,6 +558,10 @@ document.getElementById('confirmPastePlan').addEventListener('click', () => {
     if (start !== -1 && end !== -1 && end > start) {
       clean = clean.slice(start, end + 1);
     }
+    // Normalize smart quotes to straight quotes so JSON.parse works
+    clean = clean
+      .replace(/[“”„‟]/g, '"')
+      .replace(/[‘’‚‛]/g, "'");
     const plan = JSON.parse(clean);
     if (Array.isArray(plan)) {
       state.mealPlan = plan;
