@@ -89,24 +89,25 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 
 function fmt$(n) { return '$' + (Math.round(n * 100) / 100).toFixed(0); }
 
-function getWeekLabel() {
+function getWeekStart() {
   const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+  const sat = new Date(now);
+  // getDay(): 0=Sun,1=Mon,...,6=Sat — roll back to most recent Saturday
+  sat.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  sat.setHours(0, 0, 0, 0);
+  return sat;
+}
+
+function getWeekLabel() {
+  const sat = getWeekStart();
+  const fri = new Date(sat);
+  fri.setDate(sat.getDate() + 6);
   const opts = { month: 'short', day: 'numeric' };
-  return `${monday.toLocaleDateString('en-US', opts)} – ${sunday.toLocaleDateString('en-US', opts)}`;
+  return `${sat.toLocaleDateString('en-US', opts)} – ${fri.toLocaleDateString('en-US', opts)}`;
 }
 
 function weekSpending() {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
-  return state.spending.filter(s => new Date(s.date) >= monday);
+  return state.spending.filter(s => new Date(s.date) >= getWeekStart());
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
