@@ -397,8 +397,17 @@ body {
 .recipe-steps li { color: var(--text2); }
 .ingredient-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .ingredient-row { display: flex; align-items: center; gap: 6px; }
-.ingredient-row input { flex: 1; padding: 8px 10px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
-.ingredient-row input:focus { border-color: var(--accent); }
+.ingredient-input-wrap {
+  flex: 1; display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 0; background: var(--bg3);
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+}
+.ingredient-input-wrap:focus-within { border-color: var(--accent); }
+.ingredient-input-wrap input {
+  flex: 1; padding: 6px 10px; background: transparent;
+  border: none; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; min-width: 0;
+}
 .ingredient-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
 .ingredient-badge.pantry { color: var(--green); background: var(--green-bg); }
 .ingredient-badge.bought { color: var(--accent); background: var(--accent-bg); }

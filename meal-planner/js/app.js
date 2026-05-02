@@ -248,8 +248,10 @@ function renderIngredientRows(ingredients) {
     const badge = status ? `<span class="ingredient-badge ${status}">${status === 'pantry' ? 'have' : 'bought'}</span>` : '';
     return `
       <div class="ingredient-row">
-        <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-ing-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" />
-        ${badge}
+        <div class="ingredient-input-wrap">
+          <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-ing-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          ${badge}
+        </div>
         <button class="delete-btn" data-remove-ing="${i}">×</button>
       </div>
     `;
