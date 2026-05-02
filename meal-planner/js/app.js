@@ -427,12 +427,10 @@ function renderShop() {
   ['shopList', 'planGroceriesView'].forEach(id => {
     const list = document.getElementById(id);
     if (!list) return;
-    // Plan-tab grocery view filters out items already in the pantry
-    const items = id === 'planGroceriesView'
-      ? state.shopList.filter(item => !isInPantry(item.name))
-      : state.shopList;
+    // Both views filter out items already in the pantry
+    const items = state.shopList.filter(item => !isInPantry(item.name));
     if (!items.length) {
-      list.innerHTML = `<div class="empty-state"><p>${id === 'planGroceriesView' ? 'nothing to buy' : 'list is empty'}</p><p>${id === 'planGroceriesView' ? 'every ingredient is in your pantry' : 'add items or generate a meal plan'}</p></div>`;
+      list.innerHTML = `<div class="empty-state"><p>nothing to buy</p><p>every ingredient is in your pantry</p></div>`;
       return;
     }
     const grouped = {};
@@ -631,11 +629,14 @@ document.querySelectorAll('#planViewToggle .toggle-btn').forEach(btn => {
 });
 
 document.getElementById('clearPlanBtn').addEventListener('click', () => {
-  if (confirm('Clear this week\'s meal plan?')) {
-    state.mealPlan = [];
-    state.shopList = [];
-    save(); renderPlan(); renderShop();
-  }
+  openModal('confirmClearModal');
+});
+
+document.getElementById('confirmClearBtn').addEventListener('click', () => {
+  state.mealPlan = [];
+  state.shopList = [];
+  save(); renderPlan(); renderShop();
+  closeModal('confirmClearModal');
 });
 
 // ─── ADD MEAL CHOOSER ─────────────────────────────────────────────────────────

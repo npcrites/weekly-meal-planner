@@ -252,6 +252,19 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="confirmClearModal">
+    <div class="modal">
+      <div class="modal-header"><h3>clear this week?</h3><button class="modal-close" data-close="confirmClearModal">✕</button></div>
+      <div class="modal-body">
+        <p class="modal-info">This will remove all meals and shopping list items for the current week. Saved meals and pantry will not be affected.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" data-close="confirmClearModal">cancel</button>
+        <button class="btn-confirm danger-confirm" id="confirmClearBtn">clear week</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay hidden" id="addMealChooserModal">
     <div class="modal">
       <div class="modal-header"><h3>add a meal</h3><button class="modal-close" data-close="addMealChooserModal">✕</button></div>
