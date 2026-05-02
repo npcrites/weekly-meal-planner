@@ -307,8 +307,8 @@ body {
   font-family: 'DM Serif Display', serif;
   font-size: 18px; font-weight: 400; color: var(--text);
   background: none; border: none; outline: none;
-  border-bottom: 1.5px solid transparent;
-  padding: 0 0 1px; width: 0; min-width: 0; flex: 1;
+  border-bottom: 1.5px solid var(--border2);
+  padding: 0 0 2px; flex: 1; min-width: 0;
   transition: border-color .15s;
 }
 .recipe-title-input:focus {
