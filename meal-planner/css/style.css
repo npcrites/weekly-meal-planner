@@ -387,6 +387,10 @@ body {
 .recipe-list { padding-left: 18px; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .recipe-list li { font-size: 14px; color: var(--text); line-height: 1.5; }
 .recipe-steps li { color: var(--text2); }
+.ingredient-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.ingredient-row { display: flex; align-items: center; gap: 6px; }
+.ingredient-row input { flex: 1; padding: 8px 10px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+.ingredient-row input:focus { border-color: var(--accent); }
 .pantry-item-name { cursor: pointer; }
 .pantry-item-name:hover { color: var(--accent); }
 

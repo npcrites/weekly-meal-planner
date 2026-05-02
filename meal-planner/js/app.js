@@ -165,20 +165,64 @@ function renderPlan() {
   `).join('');
 
   grid.querySelectorAll('.meal-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const meal = state.mealPlan[card.dataset.mealIdx];
-      document.getElementById('recipeTitle').textContent = meal.name;
-      document.getElementById('recipeMeta').textContent = `${meal.day}${meal.type ? ' · ' + meal.type : ''}${meal.time ? ' · ' + meal.time : ''}`;
-      document.getElementById('recipeIngredients').innerHTML = meal.ingredients
-        ? meal.ingredients.map(i => `<li>${i}</li>`).join('') : '<li>no ingredients listed</li>';
-      document.getElementById('recipeInstructions').innerHTML = meal.instructions
-        ? meal.instructions.map(s => `<li>${s}</li>`).join('') : '<li>no instructions — regenerate your meal plan to get them</li>';
-      document.getElementById('recipeAppliances').innerHTML = meal.appliances
-        ? meal.appliances.map(a => `<span class="meal-tag">${a}</span>`).join('') : '';
-      openModal('recipeModal');
+    card.addEventListener('click', () => openRecipeModal(parseInt(card.dataset.mealIdx)));
+  });
+}
+
+let editingMealIdx = null;
+
+function renderIngredientRows(ingredients) {
+  const list = document.getElementById('recipeIngredients');
+  list.innerHTML = ingredients.map((ing, i) => `
+    <div class="ingredient-row">
+      <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-ing-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <button class="delete-btn" data-remove-ing="${i}">×</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-remove-ing]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.removeIng);
+      const meal = state.mealPlan[editingMealIdx];
+      meal.ingredients.splice(idx, 1);
+      renderIngredientRows(meal.ingredients);
     });
   });
 }
+
+function openRecipeModal(idx) {
+  editingMealIdx = idx;
+  const meal = state.mealPlan[idx];
+  document.getElementById('recipeTitle').textContent = meal.name;
+  document.getElementById('recipeMeta').textContent = `${meal.day}${meal.type ? ' · ' + meal.type : ''}${meal.time ? ' · ' + meal.time : ''}`;
+  if (!meal.ingredients) meal.ingredients = [];
+  renderIngredientRows(meal.ingredients);
+  document.getElementById('recipeInstructions').innerHTML = meal.instructions && meal.instructions.length
+    ? meal.instructions.map(s => `<li>${s}</li>`).join('')
+    : '<li>no instructions — regenerate your meal plan to get them</li>';
+  document.getElementById('recipeAppliances').innerHTML = meal.appliances
+    ? meal.appliances.map(a => `<span class="meal-tag">${a}</span>`).join('') : '';
+  openModal('recipeModal');
+}
+
+document.getElementById('addIngredientBtn').addEventListener('click', () => {
+  const meal = state.mealPlan[editingMealIdx];
+  if (!meal.ingredients) meal.ingredients = [];
+  meal.ingredients.push('');
+  renderIngredientRows(meal.ingredients);
+  // Focus the newly added input
+  const inputs = document.querySelectorAll('#recipeIngredients input');
+  inputs[inputs.length - 1].focus();
+});
+
+document.getElementById('saveRecipeBtn').addEventListener('click', () => {
+  const meal = state.mealPlan[editingMealIdx];
+  // Read current values from inputs
+  const inputs = document.querySelectorAll('#recipeIngredients input');
+  meal.ingredients = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  save();
+  renderPlan();
+  closeModal('recipeModal');
+});
 
 function renderPantry(filter = '') {
   const list = document.getElementById('pantryList');
@@ -531,6 +575,7 @@ Available appliances: air fryer, stove, oven, rice cooker, food processor.
 Prefer meals that use pantry items. Mix of cuisines, no dietary restrictions.
 Quality matters — use fresh, whole ingredients. No frozen pizza, processed shortcuts, or low-effort meals.
 Schedule perishables (fish, seafood, fresh herbs) early in the week (Saturday/Sunday/Monday).
+Only include entries for the meals listed above. Do NOT add placeholder entries like "N/A" or "lunch not requested" for days that weren't asked for — just omit them from the array.
 
 Return ONLY a JSON array, no other text:
 [{"day":"Monday","type":"dinner","name":"Meal Name","time":"30 min","ingredients":["ingredient1","ingredient2","ingredient3"],"instructions":["Step 1: ...","Step 2: ...","Step 3: ..."],"appliances":["stove"]}]`;
@@ -559,7 +604,9 @@ document.getElementById('confirmPastePlan').addEventListener('click', () => {
     }
     const plan = JSON.parse(clean);
     if (Array.isArray(plan)) {
-      state.mealPlan = plan;
+      // Drop placeholder entries Claude sometimes inserts for unrequested meals
+      const filtered = plan.filter(m => m && m.name && !/^n\/?a/i.test(m.name) && !/not requested/i.test(m.name));
+      state.mealPlan = filtered;
       const ingredients = [...new Set(plan.flatMap(m => m.ingredients || []))];
       const pantryNames = state.pantry.map(p => p.name.toLowerCase());
       ingredients.forEach(ing => {

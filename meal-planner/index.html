@@ -266,14 +266,16 @@
       <div class="modal-header"><h3 id="recipeTitle"></h3><button class="modal-close" data-close="recipeModal">✕</button></div>
       <div class="modal-body">
         <div class="recipe-meta" id="recipeMeta"></div>
-        <div id="recipeAppliancesWrap" style="margin-top:6px" id="recipeAppliances"></div>
+        <div id="recipeAppliances" style="margin-top:6px"></div>
         <label style="margin-top:1rem">ingredients</label>
-        <ul class="recipe-list" id="recipeIngredients"></ul>
+        <div class="ingredient-list" id="recipeIngredients"></div>
+        <button class="copy-btn" id="addIngredientBtn" style="margin-top:8px">+ add ingredient</button>
         <label style="margin-top:1rem">instructions</label>
         <ol class="recipe-list recipe-steps" id="recipeInstructions"></ol>
       </div>
       <div class="modal-footer">
-        <button class="btn-confirm" data-close="recipeModal">done</button>
+        <button class="btn-cancel" data-close="recipeModal">cancel</button>
+        <button class="btn-confirm" id="saveRecipeBtn">save</button>
       </div>
     </div>
   </div>
