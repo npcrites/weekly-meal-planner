@@ -415,16 +415,28 @@ function renderLog() {
   });
 }
 
+function isInPantry(name) {
+  const lower = name.toLowerCase();
+  return state.pantry.some(p => {
+    const pName = p.name.toLowerCase();
+    return lower === pName || lower.includes(pName) || pName.includes(lower);
+  });
+}
+
 function renderShop() {
   ['shopList', 'planGroceriesView'].forEach(id => {
     const list = document.getElementById(id);
     if (!list) return;
-    if (!state.shopList.length) {
-      list.innerHTML = `<div class="empty-state"><p>list is empty</p><p>add items or generate a meal plan</p></div>`;
+    // Plan-tab grocery view filters out items already in the pantry
+    const items = id === 'planGroceriesView'
+      ? state.shopList.filter(item => !isInPantry(item.name))
+      : state.shopList;
+    if (!items.length) {
+      list.innerHTML = `<div class="empty-state"><p>${id === 'planGroceriesView' ? 'nothing to buy' : 'list is empty'}</p><p>${id === 'planGroceriesView' ? 'every ingredient is in your pantry' : 'add items or generate a meal plan'}</p></div>`;
       return;
     }
     const grouped = {};
-    state.shopList.forEach(item => {
+    items.forEach(item => {
       const store = item.store || 'any';
       if (!grouped[store]) grouped[store] = [];
       grouped[store].push(item);
@@ -649,9 +661,7 @@ function renderManualIngredients() {
   const list = document.getElementById('manualIngredients');
   list.innerHTML = manualIngredients.map((ing, i) => `
     <div class="ingredient-row">
-      <div class="ingredient-input-wrap">
-        <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-manual-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ingredient" />
-      </div>
+      <input type="text" value="${ing.replace(/"/g, '&quot;')}" data-manual-idx="${i}" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ingredient" />
       <button class="delete-btn" data-remove-manual="${i}">×</button>
     </div>
   `).join('');
