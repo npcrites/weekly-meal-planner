@@ -655,6 +655,11 @@ document.getElementById('chooseManual').addEventListener('click', () => {
   openManualMealModal();
 });
 
+document.getElementById('chooseItem').addEventListener('click', () => {
+  closeModal('addMealChooserModal');
+  openModal('addShopModal');
+});
+
 initToggle('manualTypeToggle');
 
 let manualIngredients = [];
