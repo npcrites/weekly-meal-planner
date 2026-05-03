@@ -428,14 +428,28 @@ function renderShop() {
   ['shopList', 'planGroceriesView'].forEach(id => {
     const list = document.getElementById(id);
     if (!list) return;
-    // Both views filter out items already in the pantry
     const items = state.shopList.filter(item => !isInPantry(item.name));
     if (!items.length) {
       list.innerHTML = `<div class="empty-state"><p>nothing to buy</p><p>every ingredient is in your pantry</p></div>`;
       return;
     }
-    const grouped = {};
+
+    // Merge duplicates by normalized name
+    const mergeMap = {};
     items.forEach(item => {
+      const key = item.name.toLowerCase().trim();
+      if (!mergeMap[key]) {
+        mergeMap[key] = { ...item, allIds: [item.id], allQtys: item.qty ? [item.qty] : [] };
+      } else {
+        mergeMap[key].allIds.push(item.id);
+        if (item.qty) mergeMap[key].allQtys.push(item.qty);
+        if (!item.checked) mergeMap[key].checked = false;
+      }
+    });
+    const deduped = Object.values(mergeMap).map(m => ({ ...m, qty: m.allQtys.join(', ') }));
+
+    const grouped = {};
+    deduped.forEach(item => {
       const store = item.store || 'any';
       if (!grouped[store]) grouped[store] = [];
       grouped[store].push(item);
@@ -447,25 +461,30 @@ function renderShop() {
       <div class="shop-store-group">
         <div class="shop-store-label">${store}</div>
         ${grouped[store].map(item => `
-          <div class="shop-item" data-shop-id="${item.id}">
-            <button class="shop-check ${item.checked ? 'checked' : ''}" data-check="${item.id}"></button>
+          <div class="shop-item">
+            <button class="shop-check ${item.checked ? 'checked' : ''}" data-check-ids="${item.allIds.join(',')}"></button>
             <span class="shop-item-name ${item.checked ? 'checked' : ''}">${item.name}</span>
             ${item.qty ? `<span class="shop-item-qty">${item.qty}</span>` : ''}
-            <button class="delete-btn" data-delete-shop="${item.id}">×</button>
+            <button class="delete-btn" data-delete-ids="${item.allIds.join(',')}">×</button>
           </div>
         `).join('')}
       </div>
     `).join('');
 
-    list.querySelectorAll('[data-check]').forEach(btn => {
+    list.querySelectorAll('[data-check-ids]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const item = state.shopList.find(i => i.id === btn.dataset.check);
-        if (item) { item.checked = !item.checked; save(); renderShop(); }
+        const ids = btn.dataset.checkIds.split(',');
+        const first = state.shopList.find(i => i.id === ids[0]);
+        if (!first) return;
+        const next = !first.checked;
+        ids.forEach(id => { const i = state.shopList.find(s => s.id === id); if (i) i.checked = next; });
+        save(); renderShop();
       });
     });
-    list.querySelectorAll('[data-delete-shop]').forEach(btn => {
+    list.querySelectorAll('[data-delete-ids]').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.shopList = state.shopList.filter(i => i.id !== btn.dataset.deleteShop);
+        const ids = btn.dataset.deleteIds.split(',');
+        state.shopList = state.shopList.filter(i => !ids.includes(i.id));
         save(); renderShop();
       });
     });
