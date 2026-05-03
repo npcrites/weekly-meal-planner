@@ -434,10 +434,16 @@ function renderShop() {
       return;
     }
 
-    // Merge duplicates by normalized name
+    // Merge duplicates by normalized name (strip leading quantities/units)
+    const ingredientKey = name => name.toLowerCase()
+      .replace(/^\d[\d\s\/¼-¾⅐-⅞]*/, '')
+      .replace(/^\s*(tbsps?|tsps?|cups?|oz|lbs?|grams?|g|kg|mls?|l|bunches?|cloves?|cans?|heads?|stalks?|sprigs?|slices?|pieces?|large|medium|small|fresh|dried|unsalted|salted)\s+/g, '')
+      .replace(/,.*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     const mergeMap = {};
     items.forEach(item => {
-      const key = item.name.toLowerCase().trim();
+      const key = ingredientKey(item.name);
       if (!mergeMap[key]) {
         mergeMap[key] = { ...item, allIds: [item.id], allQtys: item.qty ? [item.qty] : [] };
       } else {
