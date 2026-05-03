@@ -216,9 +216,11 @@ function renderPlan() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const idx = parseInt(btn.dataset.deleteMeal);
+      syncShopListAfterMealChange(state.mealPlan[idx].ingredients || [], idx);
       state.mealPlan.splice(idx, 1);
       save();
       renderPlan();
+      renderShop();
     });
   });
 
@@ -228,6 +230,26 @@ function renderPlan() {
 }
 
 let editingMealIdx = null;
+
+function ingredientKey(name) {
+  return name.toLowerCase()
+    .replace(/^\d[\d\s\/¼-¾⅐-⅞]*/, '')
+    .replace(/^\s*(tbsps?|tsps?|cups?|oz|lbs?|grams?|g|kg|mls?|l|bunches?|cloves?|cans?|heads?|stalks?|sprigs?|slices?|pieces?|large|medium|small|fresh|dried|unsalted|salted)\s+/g, '')
+    .replace(/,.*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Remove shopList items whose ingredient key no longer appears in any meal (excluding excludeIdx).
+function syncShopListAfterMealChange(removedIngredients, excludeIdx) {
+  const remaining = new Set(
+    state.mealPlan.flatMap((m, i) => i === excludeIdx ? [] : (m.ingredients || []).map(ingredientKey))
+  );
+  const removedKeys = removedIngredients.map(ingredientKey).filter(k => !remaining.has(k));
+  if (removedKeys.length) {
+    state.shopList = state.shopList.filter(s => !removedKeys.includes(ingredientKey(s.name)));
+  }
+}
 
 function ingredientStatus(ing) {
   const lower = ing.toLowerCase();
@@ -311,10 +333,15 @@ document.getElementById('saveRecipeBtn').addEventListener('click', () => {
   const meal = state.mealPlan[editingMealIdx];
   const newName = document.getElementById('recipeTitle').value.trim();
   if (newName) meal.name = newName;
+  const oldIngredients = [...(meal.ingredients || [])];
   const inputs = document.querySelectorAll('#recipeIngredients input');
   meal.ingredients = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  const newKeys = new Set(meal.ingredients.map(ingredientKey));
+  const removed = oldIngredients.filter(ing => !newKeys.has(ingredientKey(ing)));
+  syncShopListAfterMealChange(removed, editingMealIdx);
   save();
   renderPlan();
+  renderShop();
   closeModal('recipeModal');
 });
 
@@ -434,13 +461,7 @@ function renderShop() {
       return;
     }
 
-    // Merge duplicates by normalized name (strip leading quantities/units)
-    const ingredientKey = name => name.toLowerCase()
-      .replace(/^\d[\d\s\/¼-¾⅐-⅞]*/, '')
-      .replace(/^\s*(tbsps?|tsps?|cups?|oz|lbs?|grams?|g|kg|mls?|l|bunches?|cloves?|cans?|heads?|stalks?|sprigs?|slices?|pieces?|large|medium|small|fresh|dried|unsalted|salted)\s+/g, '')
-      .replace(/,.*$/, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    // Merge duplicates by normalized name
     const mergeMap = {};
     items.forEach(item => {
       const key = ingredientKey(item.name);
@@ -490,8 +511,14 @@ function renderShop() {
     list.querySelectorAll('[data-delete-ids]').forEach(btn => {
       btn.addEventListener('click', () => {
         const ids = btn.dataset.deleteIds.split(',');
+        const deletedKeys = new Set(
+          ids.map(id => state.shopList.find(s => s.id === id)).filter(Boolean).map(s => ingredientKey(s.name))
+        );
         state.shopList = state.shopList.filter(i => !ids.includes(i.id));
-        save(); renderShop();
+        state.mealPlan.forEach(meal => {
+          if (meal.ingredients) meal.ingredients = meal.ingredients.filter(ing => !deletedKeys.has(ingredientKey(ing)));
+        });
+        save(); renderShop(); renderPlan();
       });
     });
   });
