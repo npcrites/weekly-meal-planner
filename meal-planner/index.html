@@ -237,6 +237,9 @@
           <button class="toggle-btn active" data-val="false">no</button>
         </div>
         <div class="settings-divider"></div>
+        <label>claude api key <span class="label-note">(for receipt scanning)</span></label>
+        <input type="password" id="setClaudeKey" placeholder="sk-ant-…" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <div class="settings-divider"></div>
         <label>supabase url <span class="label-note">(for shared pantry)</span></label>
         <input type="text" id="setSupabaseUrl" placeholder="https://xxx.supabase.co" />
         <label>supabase anon key</label>
@@ -404,14 +407,18 @@
     <div class="modal">
       <div class="modal-header"><h3>scan receipt</h3><button class="modal-close" data-close="receiptModal">✕</button></div>
       <div class="modal-body">
-        <p class="modal-info">Upload your receipt photo to Claude with this prompt, then paste the JSON back.</p>
-        <div class="prompt-box">Parse this grocery receipt. Return only JSON in this exact format: {"store":"...","total":0.00,"items":[{"name":"...","category":"produce|protein|dairy|grains|pantry|frozen|other","qty":"..."}]}</div>
-        <label style="margin-top:1rem">paste claude's json</label>
-        <textarea id="receiptPasteArea" placeholder='{"store":"Trader Joes","total":67.50,"items":[...]}' rows="6" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+        <label type="button" class="receipt-upload-label" id="receiptUploadLabel">
+          <input type="file" id="receiptImageInput" accept="image/*" capture="environment" style="display:none" />
+          <span id="receiptUploadText">📷 take or choose photo</span>
+        </label>
+        <div id="receiptStatus" style="display:none;margin-top:10px;font-size:13px;color:var(--text3)">processing…</div>
+        <div id="receiptErrorMsg" style="display:none;margin-top:10px;font-size:13px;color:var(--red)"></div>
+        <label style="margin-top:1rem">or paste json manually</label>
+        <textarea id="receiptPasteArea" placeholder='{"store":"Trader Joes","total":67.50,"items":[...]}' rows="4" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" data-close="receiptModal">cancel</button>
-        <button class="btn-confirm" id="confirmReceipt">import receipt</button>
+        <button class="btn-confirm" id="confirmReceipt">import</button>
       </div>
     </div>
   </div>

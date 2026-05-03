@@ -5,6 +5,7 @@ const DEFAULTS = {
   hardCap: 250,
   dinnersPerWeek: 5,
   includeLunches: false,
+  claudeKey: '',
   supabaseUrl: '',
   supabaseKey: '',
 };
@@ -637,36 +638,97 @@ document.getElementById('clearCheckedBtn').addEventListener('click', () => {
 });
 
 // ─── RECEIPT SCAN ─────────────────────────────────────────────────────────────
+function importReceiptJson(raw) {
+  const parsed = JSON.parse(raw);
+  if (!parsed.items || !Array.isArray(parsed.items)) return 0;
+  parsed.items.forEach(item => {
+    const exists = state.pantry.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+    if (!exists) {
+      state.pantry.push({ id: uid(), name: item.name, category: item.category || 'other', qty: item.qty || '', low: false, staple: false });
+    } else {
+      exists.qty = item.qty || exists.qty;
+      exists.low = false;
+    }
+  });
+  if (parsed.total && parsed.store) {
+    state.spending.push({
+      id: uid(), who: 'Nick', category: 'groceries',
+      place: parsed.store, amount: parsed.total,
+      note: 'from receipt scan', date: new Date().toISOString(),
+    });
+  }
+  return parsed.items.length;
+}
+
 document.getElementById('receiptScanBtn').addEventListener('click', () => {
   document.getElementById('receiptPasteArea').value = '';
+  document.getElementById('receiptStatus').style.display = 'none';
+  document.getElementById('receiptErrorMsg').style.display = 'none';
+  document.getElementById('receiptUploadText').textContent = '📷 take or choose photo';
   openModal('receiptModal');
 });
+
+document.getElementById('receiptImageInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('receiptUploadText').textContent = file.name;
+  const apiKey = state.settings.claudeKey;
+  if (!apiKey) {
+    document.getElementById('receiptErrorMsg').textContent = 'Add your Claude API key in settings to auto-process photos.';
+    document.getElementById('receiptErrorMsg').style.display = 'block';
+    return;
+  }
+  document.getElementById('receiptStatus').style.display = 'block';
+  document.getElementById('receiptErrorMsg').style.display = 'none';
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result.split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64 } },
+          { type: 'text', text: 'Parse this grocery receipt. Return ONLY raw JSON, no markdown: {"store":"...","total":0.00,"items":[{"name":"...","category":"produce|protein|dairy|grains|pantry|frozen|other","qty":"..."}]}' }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || 'API error');
+    const text = data.content[0].text.trim().replace(/^```json?\n?/, '').replace(/\n?```$/, '');
+    const count = importReceiptJson(text);
+    save(); renderAll(); closeModal('receiptModal');
+    document.getElementById('receiptStatus').style.display = 'none';
+    document.getElementById('receiptPasteArea').value = '';
+    document.getElementById('receiptImageInput').value = '';
+  } catch(err) {
+    document.getElementById('receiptStatus').style.display = 'none';
+    document.getElementById('receiptErrorMsg').textContent = err.message || 'Failed to process receipt.';
+    document.getElementById('receiptErrorMsg').style.display = 'block';
+  }
+});
+
 document.getElementById('confirmReceipt').addEventListener('click', () => {
   const raw = document.getElementById('receiptPasteArea').value.trim();
   if (!raw) return;
   try {
-    const parsed = JSON.parse(raw);
-    if (parsed.items && Array.isArray(parsed.items)) {
-      parsed.items.forEach(item => {
-        const exists = state.pantry.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-        if (!exists) {
-          state.pantry.push({ id: uid(), name: item.name, category: item.category || 'other', qty: item.qty || '', low: false, staple: false });
-        } else {
-          exists.qty = item.qty || exists.qty;
-          exists.low = false;
-        }
-      });
-      if (parsed.total && parsed.store) {
-        state.spending.push({
-          id: uid(), who: 'Nick', category: 'groceries',
-          place: parsed.store, amount: parsed.total,
-          note: 'from receipt scan', date: new Date().toISOString(),
-        });
-      }
-      save(); renderAll(); closeModal('receiptModal');
-      alert(`Imported ${parsed.items.length} items from receipt.`);
-    }
-  } catch(e) { alert('Could not parse JSON. Make sure you copied exactly what Claude returned.'); }
+    const count = importReceiptJson(raw);
+    save(); renderAll(); closeModal('receiptModal');
+  } catch(e) {
+    document.getElementById('receiptErrorMsg').textContent = 'Could not parse JSON.';
+    document.getElementById('receiptErrorMsg').style.display = 'block';
+  }
 });
 
 // Plan tab toggle: meals vs groceries
@@ -890,6 +952,7 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
   document.getElementById('setDiningBudget').value = s.diningBudget;
   document.getElementById('setHardCap').value = s.hardCap;
   document.getElementById('setDinners').value = s.dinnersPerWeek;
+  document.getElementById('setClaudeKey').value = s.claudeKey || '';
   document.getElementById('setSupabaseUrl').value = s.supabaseUrl || '';
   document.getElementById('setSupabaseKey').value = s.supabaseKey || '';
   setToggleVal('lunchToggle', s.includeLunches ? 'true' : 'false');
@@ -902,6 +965,7 @@ document.getElementById('confirmSettings').addEventListener('click', () => {
   state.settings.hardCap = parseFloat(document.getElementById('setHardCap').value) || 250;
   state.settings.dinnersPerWeek = parseInt(document.getElementById('setDinners').value) || 5;
   state.settings.includeLunches = getToggleVal('lunchToggle') === 'true';
+  state.settings.claudeKey = document.getElementById('setClaudeKey').value.trim();
   state.settings.supabaseUrl = document.getElementById('setSupabaseUrl').value.trim();
   state.settings.supabaseKey = document.getElementById('setSupabaseKey').value.trim();
   renderAll(); closeModal('settingsModal');

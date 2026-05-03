@@ -247,6 +247,14 @@ body {
 .log-empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 14px; }
 
 /* SHOPPING LIST */
+.receipt-upload-label {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3); border: 1.5px dashed var(--border2);
+  border-radius: var(--radius); padding: 16px; cursor: pointer;
+  font-size: 14px; color: var(--text2); text-align: center;
+  transition: border-color .15s;
+}
+.receipt-upload-label:hover { border-color: var(--accent); }
 .receipt-card {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--accent-bg); border: 0.5px solid rgba(200,185,122,0.2);
